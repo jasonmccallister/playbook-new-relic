@@ -1,0 +1,26 @@
+---
+- hosts: "{{ my_hosts }}"
+  vars:
+    new_relic_license_key: "{{ my_new_relic_license }}"
+  remote_user: root
+  sudo: yes
+
+  tasks:
+  - name: Add New Relic gpg key
+    apt_key: id=548C16BF url=https://download.newrelic.com/548C16BF.gpg state=present
+    tags: newrelic
+
+  - name: Add New Relic to apt repo list
+    apt_repository: repo='deb http://apt.newrelic.com/debian/ newrelic non-free' state=present update_cache=yes
+
+  - name: Install New Relic package
+    apt: pkg=newrelic-sysmond state=present
+    tags: newrelic
+
+  - name: Configure your New Relic license key
+    shell: nrsysmond-config --set license_key={{ new_relic_license_key }}
+    notify: start new relic
+
+  handlers:
+    - name: start new relic
+      service: name=newrelic-sysmond state=restarted
